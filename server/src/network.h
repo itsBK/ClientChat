@@ -2,6 +2,9 @@
 #define CHAT_PROTOCOL_H
 
 #include <stdint.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include "util.h"
 
 /* TODO: When implementing the fully-featured network protocol (including
  * login), replace this with message structures derived from the network

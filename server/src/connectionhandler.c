@@ -4,10 +4,15 @@
 
 static int createPassiveSocket(in_port_t port)
 {
-	int fd = -1;
-	//TODO: socket()
-	//TODO: bind() to port
-	//TODO: listen()
+	int fd = socket(AF_INET, SOCK_STREAM, 0);
+	setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, 1, sizeof(int));
+	struct sockaddr_in serverSocket;
+	serverSocket.sin_family = AF_INET;
+	serverSocket.sin_port = htons(port);
+	serverSocket.sin_addr.s_addr = INADDR_ANY;
+
+	bind(fd, &serverSocket, sizeof(serverSocket));
+	listen(fd, MAXIMUM_CONNECTIONS_COUNT);
 
 	errno = ENOSYS;
 	return fd;
@@ -26,6 +31,8 @@ int connectionHandler(in_port_t port)
 	{
 		//TODO: accept() incoming connection
 		//TODO: add connection to user list and start client thread
+		int socketFd = accept(fd, NULL, NULL);
+		User* newUser = addUser(socketFd);
 	}
 
 	return 0;	//never reached
