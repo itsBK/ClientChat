@@ -61,10 +61,12 @@ void removeUser(User* userToRemove)
         else if (current == userBack)
         {
             userBack = current->next;
+            userBack->prev = NULL;
         }
         else if (current == userFront)
         {
             userFront = current->prev;
+            userFront->next = NULL;
         }
         else
         {
