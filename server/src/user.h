@@ -8,9 +8,9 @@ typedef struct User
 	struct User *prev;
 	struct User *next;
 	pthread_t thread;	//thread ID of the client thread
-	int sock;		//socket for client
+	int sock;			//socket for client
+	char* name;
 } User;
-
 
 User* addUser(int socketFd);
 void removeUser(User* userToRemove);

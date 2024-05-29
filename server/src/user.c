@@ -19,6 +19,7 @@ User* addUser(int socketFd)
     newUser->sock = socketFd;
     newUser->prev = NULL;
     newUser->next = NULL;
+    newUser->name = NULL;
 
     pthread_mutex_lock(&userLock);
     if (userBack == NULL)
@@ -75,7 +76,10 @@ void removeUser(User* userToRemove)
         }
 
         pthread_join(userToRemove->thread, NULL);
+        if (userToRemove->name != NULL)
+            free(userToRemove->name);
         free(userToRemove);
+        
         pthread_mutex_unlock(&userLock);
         break;
     }

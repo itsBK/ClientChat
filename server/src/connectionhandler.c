@@ -14,7 +14,6 @@ static int createPassiveSocket(in_port_t port)
 	bind(fd, &serverSocket, sizeof(serverSocket));
 	listen(fd, MAXIMUM_CONNECTIONS_COUNT);
 
-	errno = ENOSYS;
 	return fd;
 }
 

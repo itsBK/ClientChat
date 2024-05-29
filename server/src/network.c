@@ -1,9 +1,49 @@
 #include <errno.h>
 #include "network.h"
 
+
+int receiveLoginRequest(int fd, LoginRequest* buffer)
+{
+	uint16_t maxLengthAllowed = sizeof(buffer->magic) + sizeof(buffer->version) + NAME_MAX_LENGTH;
+	if (buffer->len > maxLengthAllowed)
+	{
+		errorPrint("message length(%u) reached maximum(%u) allowed", buffer->len, maxLengthAllowed);
+		return -1;
+	}
+	
+	ssize_t bytesReceived = recv(fd, &buffer->magic, buffer->len, 0);
+	if (bytesReceived < 0)
+	{
+		errnoPrint("error occured while receiving login request");
+	}
+	
+	buffer->magic = ntohl(buffer->magic);
+	if (buffer->magic != LOGIN_REQUEST_MAGIC_VALUE)
+	{
+		errorPrint("wrong magic number sent. closing thread");
+		return -1;
+	}
+
+	return bytesReceived;
+}
+
+int receiveClient2Server(int fd, Client2Server* buffer)
+{
+	if (buffer->len > TEXT_MAX)
+		return -1;
+	
+	ssize_t bytesReceived = recv(fd, &buffer->text, buffer->len, 0);
+	if (bytesReceived < 0)
+	{
+		errnoPrint("error occured while receiving (Client2Server) message");
+	}
+	return bytesReceived;
+}
+
+
 int networkReceive(int fd, Message *buffer)
 {
-	ssize_t bytesReceived = recv(fd, &buffer->len, sizeof(buffer->len), 0);
+	ssize_t bytesReceived = recv(fd, &buffer->type, sizeof(buffer->type) + sizeof(buffer->len), 0);
 
 	if (bytesReceived == 0)
 	{
@@ -12,36 +52,43 @@ int networkReceive(int fd, Message *buffer)
 
 	else if (bytesReceived < 0)
 	{
-		errorPrint("111 error happening here mate %d, error code: %d", bytesReceived, errno);
+		errnoPrint("error occurred while receiving message");
 		return bytesReceived;
 	}
 
+	enum MessageType type = buffer->type;
 	buffer->len = ntohs(buffer->len);
-	
-	if (buffer->len > MSG_MAX)
-		return -1;
-	
-	bytesReceived = recv(fd, &buffer->text, buffer->len, 0);
-	if (bytesReceived < 0)
+	switch (type)
 	{
-		errorPrint("222 error happening here mate %d, error code: %d", bytesReceived, errno);
-	}
+		case LOGIN_REQUEST:
+			return receiveLoginRequest(fd, buffer);
+		case CLIENT_2_SERVER:
+			return receiveClient2Server(fd, buffer);
 
-	return bytesReceived;
+		case SERVER_2_CLIENT:
+		case USER_ADDED:
+		case USED_REMOVED:
+		case LOGIN_RESPONSE:
+			errorPrint("client is not supposed to send this message type (%u)", buffer->type);
+			return -1;
+		default:
+			errorPrint("wrong message type (%u) received", buffer->type);
+			return -1;
+	}
 }
 
 int networkSend(int fd, const Message *buffer)
 {
-	uint16_t len = htons(buffer->len);
-	ssize_t status = send(fd, &len, sizeof(len), 0);
-	if (status < 0) {
-		errnoPrint("1111 error happened here %d", status);
+	ssize_t status = send(fd, &buffer->type, sizeof(buffer->type) + sizeof(buffer->len), 0);
+	if (status < 0)
+	{
+		errnoPrint("1111 error happened here");
 		return status;
 	}
 
-	status = send(fd, &buffer->text, buffer->len, 0);
+	status = send(fd, &buffer->data, ntohs(buffer->len), 0);
 	if (status < 0)
-		errnoPrint("2222 error happened here %d", status);
+		errnoPrint("2222 error happened here");
 
 	return status;
 }
