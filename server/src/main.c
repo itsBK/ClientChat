@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include "server.h"
 #include "connectionhandler.h"
 #include "util.h"
 #include "network.h"
