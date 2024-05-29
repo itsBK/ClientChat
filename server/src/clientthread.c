@@ -116,24 +116,28 @@ int processLoginRequest(User* self, LoginRequest* request)
 	response.code = SUCCESS;
 	networkSend(self->sock, &response);
 
-
+	// TODO: move to seperate function
 
 	UserAdded userAdded;
 	userAdded.type = USER_ADDED;
 	userAdded.len = htons(sizeof(userAdded.timestamp) + nameLength);
-	time_t time1 = time(NULL);
-	infoPrint("time normal %d, and flipped %d", time1, hton64u(time1));
-	userAdded.timestamp = hton64u(time1);
+	userAdded.timestamp = hton64u(time(NULL));
 	strncpy(&userAdded.name, name, nameLength);
-
-	//TODO: notifiy this user about existing users
 
 	user = NULL;
 	while ((user = iterator(user)) != NULL)
 	{
-		int status = networkSend(user->sock, &userAdded);
-		if (status <= 0)
-			errnoPrint("unknown error occured while sending data, error code:");
+		if (user != self)
+		{
+			int existingUserNameLength = strlen(user->name);
+			UserAdded existingUser;
+			existingUser.type = USER_ADDED;
+			existingUser.len = htons(sizeof(existingUser.timestamp) + existingUserNameLength);
+			existingUser.timestamp = 0;
+			strncpy(&existingUser.name, user->name, existingUserNameLength);
+			networkSend(self->sock, &existingUser);
+		}
+		networkSend(user->sock, &userAdded);
 	}
 
 	return 0;
