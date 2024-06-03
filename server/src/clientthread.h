@@ -14,6 +14,10 @@
  * the function sends a LoginResponse regardless of the return value
 */
 int processLoginRequest(User* self, LoginRequest* request);
+void processReceivedMessage(User* sender, Client2Server* receivedMessage);
+void processCommand(User* sender, Client2Server* receivedCommand, Server2Client* responseMsg);
+void sendMessage(User* sender, Client2Server* receivedMsg, Server2Client* responseMsg);
+
 void sendUserAdded(User* newUser);
 void sendUserRemoved(User* removedUser, enum UserRemovedCode code);
 

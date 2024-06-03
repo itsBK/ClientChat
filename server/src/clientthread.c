@@ -31,11 +31,12 @@ void *clientthread(void *arg)
 		{
 			if (!isLoggedin)
 			{
-				errorPrint("client is not logged in yet");
+				errorPrint("client cannot sent Client2Server messages before logging in");
+				returnVal = -1;
 				break;
 			}
 
-			infoPrint("received client to server message");
+			processReceivedMessage(self, message);
 		}
 
 
@@ -53,9 +54,10 @@ void *clientthread(void *arg)
 	}
 
 	// TODO: handle kicked from server
-	if (returnVal == 0)
+	// only inform others if this client was logged in
+	if (returnVal == 0 && isLoggedin)
 		sendUserRemoved(self, CONNECTION_CLOSED);
-	else
+	else if (isLoggedin)
 		sendUserRemoved(self, COMMUNICATION_ERROR);
 
 	debugPrint("Client thread stopping.");
@@ -96,6 +98,48 @@ int processLoginRequest(User* self, LoginRequest* request)
 	}
 
 	return 0;
+}
+
+
+void processReceivedMessage(User* sender, Client2Server* receivedMessage)
+{
+	Server2Client server2Client;
+	server2Client.type = SERVER_2_CLIENT;
+	server2Client.len = htons(sizeof(server2Client.timestamp) + sizeof(server2Client.originalSender) + receivedMessage->len);
+	server2Client.timestamp = hton64u(time(NULL));
+	memset(&server2Client.originalSender, '\0', sizeof(server2Client.originalSender));
+
+	if (receivedMessage->text[0] == '/')
+	{
+		processCommand(sender, receivedMessage, &server2Client);
+	} else
+	{
+		sendMessage(sender, receivedMessage, &server2Client);
+	}
+
+}
+
+void processCommand(User* sender, Client2Server* receivedCommand, Server2Client* responseMsg)
+{
+	char text[] = "you send an invalid command. don't be stupid";
+	int textLen = strlen(text);
+	responseMsg->len = htons(sizeof(responseMsg->timestamp) + sizeof(responseMsg->originalSender) + textLen);
+	strncpy(&responseMsg->text, text, textLen);
+	networkSend(sender->sock, responseMsg);
+}
+
+
+void sendMessage(User* sender, Client2Server* receivedMsg, Server2Client* responseMsg)
+{
+	strcpy(&responseMsg->originalSender, sender->name);
+	strncpy(&responseMsg->text, receivedMsg->text, receivedMsg->len);
+
+	User* user = NULL;
+	while ((user = iterator(user)) != NULL)
+	{
+		if (isUserLoggedIn(user))
+			networkSend(user->sock, responseMsg);
+	}
 }
 
 

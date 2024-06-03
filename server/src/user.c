@@ -125,7 +125,23 @@ enum LoginResponseCode checkAndProcessName(User* user, char* name)
 		}
 	}
 
+    pthread_mutex_lock(&userLock);
 	user->name = malloc(strlen(name));
 	strcpy(user->name, name);
+    pthread_mutex_unlock(&userLock);
+    
     return SUCCESS;
+}
+
+
+bool isUserLoggedIn(User* user)
+{
+    bool result = false;
+    pthread_mutex_lock(&userLock);
+
+    if (user->name != NULL)
+        result = true;
+
+    pthread_mutex_unlock(&userLock);
+    return result;
 }

@@ -2,6 +2,7 @@
 #define USER_H
 
 #include <pthread.h>
+#include <stdbool.h>
 #include "network.h"
 
 typedef struct User
@@ -32,5 +33,6 @@ User* iterator(User* currentUser);
  * if the return code is SUCCESS the name will be also allocated in User struct
 */
 enum LoginResponseCode checkAndProcessName(User* user, char* name);
+bool isUserLoggedIn(User* user);
 
 #endif
