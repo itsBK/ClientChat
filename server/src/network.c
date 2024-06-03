@@ -67,7 +67,7 @@ int networkReceive(int fd, Message *buffer)
 
 		case SERVER_2_CLIENT:
 		case USER_ADDED:
-		case USED_REMOVED:
+		case USER_REMOVED:
 		case LOGIN_RESPONSE:
 			errorPrint("client is not supposed to send this message type (%u)", buffer->type);
 			return -1;

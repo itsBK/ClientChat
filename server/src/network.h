@@ -49,7 +49,7 @@ enum MessageType
 	CLIENT_2_SERVER = 2,
 	SERVER_2_CLIENT = 3,
 	USER_ADDED = 4,
-	USED_REMOVED = 5,
+	USER_REMOVED = 5,
 };
 
 typedef struct __attribute__((__packed__))

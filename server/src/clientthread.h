@@ -14,6 +14,8 @@
  * the function sends a LoginResponse regardless of the return value
 */
 int processLoginRequest(User* self, LoginRequest* request);
+void sendUserAdded(User* newUser);
+void sendUserRemoved(User* removedUser, enum UserRemovedCode code);
 
 void *clientthread(void *arg);
 

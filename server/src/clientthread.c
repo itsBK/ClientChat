@@ -15,11 +15,8 @@ void *clientthread(void *arg)
 	//TODO: Receive messages and send them to all users, skip self
 	void* message = malloc(1024);
 	int returnVal;
-	while ((returnVal = networkReceive(self->sock, message)) != 0)
+	while ((returnVal = networkReceive(self->sock, message)) > 0)
 	{
-		if (returnVal < 0)
-			break;
-		
 		enum MessageType type = ((Message*) message)->type;
 		if (type == LOGIN_REQUEST)
 		{
@@ -28,6 +25,7 @@ void *clientthread(void *arg)
 				break;
 			
 			isLoggedin = true;
+			sendUserAdded(self);
 
 		} else if (type == CLIENT_2_SERVER)
 		{
@@ -54,6 +52,12 @@ void *clientthread(void *arg)
 		}
 	}
 
+	// TODO: handle kicked from server
+	if (returnVal == 0)
+		sendUserRemoved(self, CONNECTION_CLOSED);
+	else
+		sendUserRemoved(self, COMMUNICATION_ERROR);
+
 	debugPrint("Client thread stopping.");
 	free(message);
 	removeUser(self);
@@ -77,57 +81,37 @@ int processLoginRequest(User* self, LoginRequest* request)
 		return -1;
 	}
 
-	//check if only allowed keys are used
-	//TODO: maybe replace with regex
 	int nameLength = request->len - sizeof(request->version) - sizeof(request->magic);
 	char name[nameLength + 1];
 	strncpy(&name, request->name, nameLength);
 	name[nameLength] = '\0';
+	
+	response.code = checkAndProcessName(self, name);
+	networkSend(self->sock, &response);
 
-	for (int i = 0; i < nameLength; i++)
+	if (response.code != SUCCESS)
 	{
-		char c = name[i];
-		if (!(c >= 33 && c <= 126 && !(c == '\'' || c == '\"' || c == '`')))
-		{
-			response.code = NAME_INVALID;
-			networkSend(self->sock, &response);
-			debugPrint("invaild name was requested");
-			return -1;
-		}
+		debugPrint("invaild name was requested");
+		return -1;
 	}
 
-	//TODO: check name availability
+	return 0;
+}
+
+
+void sendUserAdded(User* newUser)
+{
+	int newUserNameLength = strlen(newUser->name);
+	UserAdded userAdded;
+	userAdded.type = USER_ADDED;
+	userAdded.len = htons(sizeof(userAdded.timestamp) + newUserNameLength);
+	userAdded.timestamp = hton64u(time(NULL));
+	strncpy(&userAdded.name, newUser->name, newUserNameLength);
+
 	User* user = NULL;
 	while ((user = iterator(user)) != NULL)
 	{
-		if (user != self && strcmp(user->name, name) == 0)
-		{
-			response.code = NAME_ALREADY_IN_USE;
-			networkSend(self->sock, &response);
-			debugPrint("invaild name was requested");
-			return -1;
-		}
-	}
-
-	// all is good now. save name
-	self->name = malloc(nameLength);
-	strcpy(self->name, name);
-
-	response.code = SUCCESS;
-	networkSend(self->sock, &response);
-
-	// TODO: move to seperate function
-
-	UserAdded userAdded;
-	userAdded.type = USER_ADDED;
-	userAdded.len = htons(sizeof(userAdded.timestamp) + nameLength);
-	userAdded.timestamp = hton64u(time(NULL));
-	strncpy(&userAdded.name, name, nameLength);
-
-	user = NULL;
-	while ((user = iterator(user)) != NULL)
-	{
-		if (user != self)
+		if (user != newUser)
 		{
 			int existingUserNameLength = strlen(user->name);
 			UserAdded existingUser;
@@ -135,10 +119,27 @@ int processLoginRequest(User* self, LoginRequest* request)
 			existingUser.len = htons(sizeof(existingUser.timestamp) + existingUserNameLength);
 			existingUser.timestamp = 0;
 			strncpy(&existingUser.name, user->name, existingUserNameLength);
-			networkSend(self->sock, &existingUser);
+			networkSend(newUser->sock, &existingUser);
 		}
 		networkSend(user->sock, &userAdded);
 	}
+}
 
-	return 0;
+
+void sendUserRemoved(User* removedUser, enum UserRemovedCode code)
+{
+	int nameLength = strlen(removedUser->name);
+	UserRemoved userRemoved;
+	userRemoved.type = USER_REMOVED;
+	userRemoved.len = htons(sizeof(userRemoved.timestamp) + sizeof(userRemoved.code) + nameLength);
+	userRemoved.timestamp = hton64u(time(NULL));
+	userRemoved.code = code;
+	strncpy(&userRemoved.name, removedUser->name, nameLength);
+
+	User* user = NULL;
+	while ((user = iterator(user)) != NULL)
+	{
+		if (user != removedUser)
+			networkSend(user->sock, &userRemoved);
+	}
 }

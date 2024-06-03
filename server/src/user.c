@@ -1,5 +1,6 @@
 #include <pthread.h>
 #include <stdlib.h>
+#include <string.h>
 #include "util.h"
 #include "user.h"
 #include "clientthread.h"
@@ -98,4 +99,33 @@ User* iterator(User* currentUser)
 
     pthread_mutex_unlock(&userLock);
     return result;
+}
+
+
+enum LoginResponseCode checkAndProcessName(User* user, char* name)
+{
+	// check if only allowed keys are used
+	// TODO: maybe replace with regex  "([!-~](?!\'|\"|`))*"
+	for (int i = 0; i < strlen(name); i++)
+	{
+		char c = name[i];
+		if (!(c >= 33 && c <= 126 && !(c == '\'' || c == '\"' || c == '`')))
+		{
+			return NAME_INVALID;
+		}
+	}
+
+	// check name availability
+	User* current = NULL;
+	while ((current = iterator(current)) != NULL)
+	{
+		if (current->name != NULL && strcmp(current->name, name) == 0)
+		{
+			return NAME_ALREADY_IN_USE;
+		}
+	}
+
+	user->name = malloc(strlen(name));
+	strcpy(user->name, name);
+    return SUCCESS;
 }
