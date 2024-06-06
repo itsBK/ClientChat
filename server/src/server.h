@@ -6,5 +6,6 @@
 
 char* serverName;
 int serverNameLength;
+char* msgQueueName;
 
 #endif
