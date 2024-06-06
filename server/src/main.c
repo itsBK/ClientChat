@@ -2,6 +2,7 @@
 #include <string.h>
 #include <ctype.h>
 #include "server.h"
+#include "broadcastagent.h"
 #include "connectionhandler.h"
 #include "util.h"
 #include "network.h"
@@ -13,14 +14,12 @@ int main(int argc, char **argv)
 	styleEnable();
 	infoPrint("Chat server, group xy");	//TODO: Add your group number!
 
-	serverName = malloc(32);
 	serverName = SERVER_DEFAULT_NAME;
 	serverNameLength = strlen(serverName);
 	in_port_t port = SERVER_DEFAULT_PORT;
 
 	//TODO: evaluate command line arguments
 	//TODO: perform initialization
-
 
 	for (int i = 1; i < argc; i++)
 	{
@@ -64,9 +63,19 @@ int main(int argc, char **argv)
 	}
 	
 	debugPrint("server name is '%s'", serverName);
+
+	msgQueueName = malloc(serverNameLength + 2);
+	msgQueueName[0] = '/';
+	strcpy(&msgQueueName[1], serverName);
+	int result = broadcastAgentInit();
+	if (result < 0)
+		return EXIT_FAILURE;
+
 	debugPrint("using port %u", port);
-	const int result = connectionHandler(port);
-	free(serverName);
+	result = connectionHandler(port);
+
+	broadcastAgentCleanup();
+	free(msgQueueName);
 
 	//TODO: perform cleanup, if required by your implementation
 	return result != -1 ? EXIT_SUCCESS : EXIT_FAILURE;

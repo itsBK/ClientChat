@@ -2,14 +2,22 @@
 #include <stdbool.h>
 #include <string.h>
 #include <time.h>
+#include <mqueue.h>
 #include "clientthread.h"
 #include "util.h"
+
+mqd_t messageQueue;
 
 void *clientthread(void *arg)
 {
 	User *self = (User *)arg;
 	bool isLoggedin = false;
-
+	messageQueue = mq_open(msgQueueName, O_RDWR);
+	if (messageQueue < 0)
+	{
+		errnoPrint("error accored while opening POSIX message queue for client thread");
+		return NULL;
+	}
 	debugPrint("Client thread started.");
 
 	//TODO: Receive messages and send them to all users, skip self
@@ -37,19 +45,6 @@ void *clientthread(void *arg)
 			}
 
 			processReceivedMessage(self, message);
-		}
-
-
-		continue;
-		User* user = NULL;
-		while ((user = iterator(user)) != NULL)
-		{
-			if (user != self)
-			{
-				int status = networkSend(user->sock, &message);
-				if (status <= 0)
-					infoPrint("unknown error occured while sending data, error code: %d", status);
-			}
 		}
 	}
 
@@ -105,7 +100,7 @@ void processReceivedMessage(User* sender, Client2Server* receivedMessage)
 {
 	Server2Client server2Client;
 	server2Client.type = SERVER_2_CLIENT;
-	server2Client.len = htons(sizeof(server2Client.timestamp) + sizeof(server2Client.originalSender) + receivedMessage->len);
+	server2Client.len = sizeof(server2Client.timestamp) + sizeof(server2Client.originalSender) + receivedMessage->len;
 	server2Client.timestamp = hton64u(time(NULL));
 	memset(&server2Client.originalSender, '\0', sizeof(server2Client.originalSender));
 
@@ -133,13 +128,11 @@ void sendMessage(User* sender, Client2Server* receivedMsg, Server2Client* respon
 {
 	strcpy(&responseMsg->originalSender, sender->name);
 	strncpy(&responseMsg->text, receivedMsg->text, receivedMsg->len);
+	int size = responseMsg->len + sizeof(responseMsg->type) + sizeof(responseMsg->len);
+	responseMsg->len = htons(responseMsg->len);
 
-	User* user = NULL;
-	while ((user = iterator(user)) != NULL)
-	{
-		if (isUserLoggedIn(user))
-			networkSend(user->sock, responseMsg);
-	}
+	if (mq_send(messageQueue, responseMsg, size, 0) == -1)
+		errnoPrint("error accored while queuing message");
 }
 
 
