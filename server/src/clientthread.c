@@ -6,6 +6,11 @@
 #include "clientthread.h"
 #include "util.h"
 
+
+char* serverName;
+int serverNameLength;
+char* msgQueueName;
+
 mqd_t messageQueue;
 
 void *clientthread(void *arg)
@@ -69,22 +74,22 @@ int processLoginRequest(User* self, LoginRequest* request)
 	response.type = LOGIN_RESPONSE;
 	response.len = htons(sizeof(response.magic) + sizeof(response.code) + serverNameLength);
 	response.magic = htonl(LOGIN_RESPONSE_MAGIC_VALUE);
-	strncpy(&response.sName, serverName, serverNameLength);
+	strncpy(response.sName, serverName, serverNameLength);
 
 	if (request->version != LOGIN_REQUEST_PROTOCOL_VERSION)
 	{
 		response.code = PROTOCOL_VERSION_MISMATCH;
-		networkSend(self->sock, &response);
+		networkSend(self->sock, (Message*) &response);
 		return -1;
 	}
 
 	int nameLength = request->len - sizeof(request->version) - sizeof(request->magic);
 	char name[nameLength + 1];
-	strncpy(&name, request->name, nameLength);
+	strncpy(name, request->name, nameLength);
 	name[nameLength] = '\0';
 	
 	response.code = checkAndProcessName(self, name);
-	networkSend(self->sock, &response);
+	networkSend(self->sock, (Message*) &response);
 
 	if (response.code != SUCCESS)
 	{
@@ -119,19 +124,19 @@ void processCommand(User* sender, Client2Server* receivedCommand, Server2Client*
 	char text[] = "you send an invalid command. don't be stupid";
 	int textLen = strlen(text);
 	responseMsg->len = htons(sizeof(responseMsg->timestamp) + sizeof(responseMsg->originalSender) + textLen);
-	strncpy(&responseMsg->text, text, textLen);
-	networkSend(sender->sock, responseMsg);
+	strncpy(responseMsg->text, text, textLen);
+	networkSend(sender->sock, (Message*) responseMsg);
 }
 
 
 void sendMessage(User* sender, Client2Server* receivedMsg, Server2Client* responseMsg)
 {
-	strcpy(&responseMsg->originalSender, sender->name);
-	strncpy(&responseMsg->text, receivedMsg->text, receivedMsg->len);
+	strcpy(responseMsg->originalSender, sender->name);
+	strncpy(responseMsg->text, receivedMsg->text, receivedMsg->len);
 	int size = responseMsg->len + sizeof(responseMsg->type) + sizeof(responseMsg->len);
 	responseMsg->len = htons(responseMsg->len);
 
-	if (mq_send(messageQueue, responseMsg, size, 0) == -1)
+	if (mq_send(messageQueue, (char*) responseMsg, size, 0) == -1)
 		errnoPrint("error accored while queuing message");
 }
 
@@ -143,7 +148,7 @@ void sendUserAdded(User* newUser)
 	userAdded.type = USER_ADDED;
 	userAdded.len = htons(sizeof(userAdded.timestamp) + newUserNameLength);
 	userAdded.timestamp = hton64u(time(NULL));
-	strncpy(&userAdded.name, newUser->name, newUserNameLength);
+	strncpy(userAdded.name, newUser->name, newUserNameLength);
 
 	User* user = NULL;
 	while ((user = iterator(user)) != NULL)
@@ -155,10 +160,10 @@ void sendUserAdded(User* newUser)
 			existingUser.type = USER_ADDED;
 			existingUser.len = htons(sizeof(existingUser.timestamp) + existingUserNameLength);
 			existingUser.timestamp = 0;
-			strncpy(&existingUser.name, user->name, existingUserNameLength);
-			networkSend(newUser->sock, &existingUser);
+			strncpy(existingUser.name, user->name, existingUserNameLength);
+			networkSend(newUser->sock, (Message*) &existingUser);
 		}
-		networkSend(user->sock, &userAdded);
+		networkSend(user->sock, (Message*) &userAdded);
 	}
 }
 
@@ -171,12 +176,12 @@ void sendUserRemoved(User* removedUser, enum UserRemovedCode code)
 	userRemoved.len = htons(sizeof(userRemoved.timestamp) + sizeof(userRemoved.code) + nameLength);
 	userRemoved.timestamp = hton64u(time(NULL));
 	userRemoved.code = code;
-	strncpy(&userRemoved.name, removedUser->name, nameLength);
+	strncpy(userRemoved.name, removedUser->name, nameLength);
 
 	User* user = NULL;
 	while ((user = iterator(user)) != NULL)
 	{
 		if (user != removedUser)
-			networkSend(user->sock, &userRemoved);
+			networkSend(user->sock, (Message*) &userRemoved);
 	}
 }

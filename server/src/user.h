@@ -26,10 +26,10 @@ User* iterator(User* currentUser);
 
 /**
  * NOTE: name must be null terminated!!
- * returns one of the following:
- * * SUCCESS
- * * NAME_ALREADY_IN_USE
- * * NAME_INVALID
+ * @returns one of the following:<br>
+ * * SUCCESS<br>
+ * * NAME_ALREADY_IN_USE<br>
+ * * NAME_INVALID<br>
  * if the return code is SUCCESS the name will be also allocated in User struct
 */
 enum LoginResponseCode checkAndProcessName(User* user, char* name);

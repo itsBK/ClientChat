@@ -17,7 +17,7 @@ static void *broadcastAgent(void *arg)
 	unsigned char buf[sizeof(Server2Client)];
 	while(threadRunning)
 	{
-		if (mq_receive(messageQueue, &buf, sizeof(Server2Client), NULL) == -1)
+		if (mq_receive(messageQueue, (char*) &buf, sizeof(Server2Client), NULL) == -1)
 		{
 			errnoPrint("error accored while dequeuing message");
 			continue;
@@ -28,7 +28,7 @@ static void *broadcastAgent(void *arg)
 		{
 			if (isUserLoggedIn(user))
 			{
-				int status = networkSend(user->sock, &buf);
+				int status = networkSend(user->sock, (Message*) &buf);
 				if (status <= 0)
 					infoPrint("unknown error occured while sending data, error code: %d", status);
 			}

@@ -61,9 +61,9 @@ int networkReceive(int fd, Message *buffer)
 	switch (type)
 	{
 		case LOGIN_REQUEST:
-			return receiveLoginRequest(fd, buffer);
+			return receiveLoginRequest(fd, (LoginRequest*) buffer);
 		case CLIENT_2_SERVER:
-			return receiveClient2Server(fd, buffer);
+			return receiveClient2Server(fd, (Client2Server*) buffer);
 
 		case SERVER_2_CLIENT:
 		case USER_ADDED:

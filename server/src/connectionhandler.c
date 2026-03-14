@@ -5,13 +5,13 @@
 static int createPassiveSocket(in_port_t port)
 {
 	int fd = socket(AF_INET, SOCK_STREAM, 0);
-	setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, 1, sizeof(int));
+	setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (void*) 1, sizeof(int));
 	struct sockaddr_in serverSocket;
 	serverSocket.sin_family = AF_INET;
 	serverSocket.sin_port = htons(port);
 	serverSocket.sin_addr.s_addr = INADDR_ANY;
 
-	bind(fd, &serverSocket, sizeof(serverSocket));
+	bind(fd, (struct sockaddr*) &serverSocket, sizeof(serverSocket));
 	listen(fd, MAXIMUM_CONNECTIONS_COUNT);
 
 	return fd;

@@ -4,8 +4,8 @@
 #define SERVER_DEFAULT_NAME "reference-server"
 #define SERVER_DEFAULT_PORT 8111
 
-char* serverName;
-int serverNameLength;
-char* msgQueueName;
+extern char* serverName;
+extern int serverNameLength;
+extern char* msgQueueName;
 
 #endif
