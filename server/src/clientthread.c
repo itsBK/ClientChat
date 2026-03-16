@@ -6,11 +6,6 @@
 #include "clientthread.h"
 #include "util.h"
 
-
-char* serverName;
-int serverNameLength;
-char* msgQueueName;
-
 mqd_t messageQueue;
 
 void *clientthread(void *arg)

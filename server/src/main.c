@@ -7,6 +7,10 @@
 #include "util.h"
 #include "network.h"
 
+char* serverName;
+int serverNameLength;
+char* msgQueueName;
+
 int main(int argc, char **argv)
 {
 	utilInit(argv[0]);

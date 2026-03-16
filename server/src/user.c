@@ -14,17 +14,17 @@ User* addUser(int socketFd)
 {
     User* newUser = malloc(sizeof(User));
     pthread_t threadId = 0;
-    int returnType = pthread_create(&threadId, NULL, clientthread, newUser);
+    pthread_create(&threadId, NULL, clientthread, newUser);
 
     newUser->thread = threadId;
     newUser->sock = socketFd;
-    newUser->prev = NULL;
     newUser->next = NULL;
     newUser->name = NULL;
 
     pthread_mutex_lock(&userLock);
     if (userBack == NULL)
     {
+        newUser->prev = NULL;
         userFront = newUser;
         userBack = newUser;
     } else
@@ -41,35 +41,35 @@ User* addUser(int socketFd)
 
 void removeUser(User* userToRemove)
 {
-    User* current = iterator(NULL);
-    while (1)
+    User* current = NULL;
+    while ((current = iterator(current)) != NULL)
     {
         if (current != userToRemove)
         {
             current = iterator(current);
             continue;
 
-        } else if (current == NULL)
-        {
-            errorPrint("ERROR: requested user to remove does not exist!");
-            break;
         }
 
         pthread_mutex_lock(&userLock);
+        //only one user is left
         if (userBack == userFront)
         {
             userBack = userFront = NULL;
         }
+        // first user
         else if (current == userBack)
         {
             userBack = current->next;
             userBack->prev = NULL;
         }
+        // last user
         else if (current == userFront)
         {
             userFront = current->prev;
             userFront->next = NULL;
         }
+        // a nobody
         else
         {
             current->next->prev = current->prev;

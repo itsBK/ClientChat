@@ -1,5 +1,6 @@
 #include <errno.h>
 #include "connectionhandler.h"
+#include "user.h"
 #include "util.h"
 
 static int createPassiveSocket(in_port_t port)
