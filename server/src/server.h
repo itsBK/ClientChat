@@ -5,7 +5,7 @@
 #define SERVER_DEFAULT_PORT 8111
 
 extern char* serverName;
-extern int serverNameLength;
+extern unsigned int serverNameLength;
 extern char* msgQueueName;
 
 #endif

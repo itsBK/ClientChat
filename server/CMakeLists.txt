@@ -1,28 +1,26 @@
-cmake_minimum_required(VERSION 3.5)
-PROJECT(chat C)
+cmake_minimum_required(VERSION 3.10)
+project(chat C CXX)
 
-SET(CMAKE_C_STANDARD 99)
-SET(CMAKE_C_STANDARD_REQUIRED ON)
+set(CMAKE_C_STANDARD 99)
+set(CMAKE_C_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_STANDARD  17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-IF("${CMAKE_C_COMPILER_ID}" STREQUAL "GNU")
-	SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra")
-	SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror=implicit")
-	SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror=return-type")
-	SET(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -Og -ggdb")
-ELSEIF("${CMAKE_C_COMPILER_ID}" STREQUAL "Clang")
-	SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra")
-	SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror=implicit")
-	SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror=return-type")
-	SET(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O0 -ggdb")
-ENDIF()
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror=implicit")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror=return-type")
 
-SET(CMAKE_THREAD_PREFER_PTHREAD TRUE)
-SET(THREADS_PREFER_PTHREAD_FLAG TRUE)
-FIND_PACKAGE(Threads REQUIRED)
+if("${CMAKE_C_COMPILER_ID}" STREQUAL "GNU")
+	set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -Og -ggdb")
+elseif("${CMAKE_C_COMPILER_ID}" STREQUAL "Clang")
+	set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O0 -ggdb")
+endif()
 
-FIND_LIBRARY(LIBRT rt)
+set(CMAKE_THREAD_PREFER_PTHREAD TRUE)
+set(THREADS_PREFER_PTHREAD_FLAG TRUE)
+find_package(Threads REQUIRED)
 
-SET(SERVER_MODULES	src/broadcastagent.c
+set(SERVER_MODULES	src/broadcastagent.c
 			src/clientthread.c
 			src/connectionhandler.c
 			src/main.c
@@ -30,11 +28,11 @@ SET(SERVER_MODULES	src/broadcastagent.c
 			src/user.c
 			src/util.c)
 
-INCLUDE_DIRECTORIES(src)
+include_directories(src)
 
-ADD_EXECUTABLE(server ${SERVER_MODULES})
-IF(LIBRT)
-	TARGET_LINK_LIBRARIES(server Threads::Threads ${LIBRT})
-ELSE()
-	TARGET_LINK_LIBRARIES(server Threads::Threads)
-ENDIF()
+add_executable(server ${SERVER_MODULES})
+if(LIBRT)
+	target_link_libraries(server Threads::Threads ${LIBRT})
+else()
+	target_link_libraries(server Threads::Threads)
+endif()

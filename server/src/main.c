@@ -8,7 +8,7 @@
 #include "network.h"
 
 char* serverName;
-int serverNameLength;
+unsigned int serverNameLength;
 char* msgQueueName;
 
 int main(int argc, char **argv)
@@ -16,7 +16,7 @@ int main(int argc, char **argv)
 	utilInit(argv[0]);
 	debugEnable();
 	styleEnable();
-	infoPrint("Chat server, group xy");	//TODO: Add your group number!
+	infoPrint("Chat server v0.1");
 
 	serverName = SERVER_DEFAULT_NAME;
 	serverNameLength = strlen(serverName);
