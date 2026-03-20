@@ -1,5 +1,4 @@
-#ifndef USER_H
-#define USER_H
+#pragma once
 
 #include <pthread.h>
 #include <stdbool.h>
@@ -34,5 +33,3 @@ User* iterator(User* currentUser);
 */
 enum LoginResponseCode checkAndProcessName(User* user, char* name);
 bool isUserLoggedIn(User* user);
-
-#endif
