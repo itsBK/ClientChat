@@ -1,8 +1,9 @@
 #include <pthread.h>
-#include <stdlib.h>
-#include <string.h>
 #include "util.hpp"
 #include "user.hpp"
+
+#include <cstring>
+
 #include "clientthread.hpp"
 
 static pthread_mutex_t userLock = PTHREAD_MUTEX_INITIALIZER;
@@ -43,11 +44,7 @@ void User::remove(User* userToRemove)
     while ((current = iterator(current)) != NULL)
     {
         if (current != userToRemove)
-        {
-            current = iterator(current);
             continue;
-
-        }
 
         pthread_mutex_lock(&userLock);
         //only one user is left

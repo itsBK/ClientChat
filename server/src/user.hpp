@@ -2,14 +2,13 @@
 #define USER_H
 
 #include <pthread.h>
-#include <stdbool.h>
 #include "network.hpp"
 
 class User
 {
 public:
-	struct User *prev;
-	struct User *next;
+	User *prev;
+	User *next;
 	pthread_t thread;	//thread ID of the client thread
 	int sock;			//socket for client
 	char* name;
