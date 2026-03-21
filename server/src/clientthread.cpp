@@ -3,8 +3,8 @@
 #include <string.h>
 #include <time.h>
 #include <mqueue.h>
-#include "clientthread.h"
-#include "util.h"
+#include "clientthread.hpp"
+#include "util.hpp"
 
 mqd_t messageQueue;
 
@@ -21,11 +21,11 @@ void *clientthread(void *arg)
 	debugPrint("Client thread started.");
 
 	//TODO: Receive messages and send them to all users, skip self
-	void* message = malloc(1024);
+	auto message = reinterpret_cast<Message*>(malloc(1024));
 	int returnVal;
 	while ((returnVal = networkReceive(self->sock, message)) > 0)
 	{
-		enum MessageType type = ((Message*) message)->type;
+		auto type = static_cast<MessageType>(message->type);
 		if (type == LOGIN_REQUEST)
 		{
 			int status = processLoginRequest(self, (LoginRequest*) message);
@@ -44,7 +44,7 @@ void *clientthread(void *arg)
 				break;
 			}
 
-			processReceivedMessage(self, message);
+			processReceivedMessage(self, reinterpret_cast<Client2Server*>(message));
 		}
 	}
 
@@ -57,7 +57,7 @@ void *clientthread(void *arg)
 
 	debugPrint("Client thread stopping.");
 	free(message);
-	removeUser(self);
+	User::remove(self);
 	
 	return NULL;
 }
@@ -69,7 +69,7 @@ int processLoginRequest(User* self, LoginRequest* request)
 	response.type = LOGIN_RESPONSE;
 	response.len = htons(sizeof(response.magic) + sizeof(response.code) + serverNameLength);
 	response.magic = htonl(LOGIN_RESPONSE_MAGIC_VALUE);
-	strncpy(response.sName, serverName, serverNameLength);
+	strncpy(response.sName, serverName.c_str(), serverNameLength);
 
 	if (request->version != LOGIN_REQUEST_PROTOCOL_VERSION)
 	{
@@ -146,7 +146,7 @@ void sendUserAdded(User* newUser)
 	strncpy(userAdded.name, newUser->name, newUserNameLength);
 
 	User* user = NULL;
-	while ((user = iterator(user)) != NULL)
+	while ((user = User::iterator(user)) != NULL)
 	{
 		if (user != newUser)
 		{
@@ -174,7 +174,7 @@ void sendUserRemoved(User* removedUser, enum UserRemovedCode code)
 	strncpy(userRemoved.name, removedUser->name, nameLength);
 
 	User* user = NULL;
-	while ((user = iterator(user)) != NULL)
+	while ((user = User::iterator(user)) != NULL)
 	{
 		if (user != removedUser)
 			networkSend(user->sock, (Message*) &userRemoved);

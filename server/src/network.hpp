@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include "util.h"
+#include "util.hpp"
 
 /* TODO: When implementing the fully-featured network protocol (including
  * login), replace this with message structures derived from the network

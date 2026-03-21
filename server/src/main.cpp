@@ -1,13 +1,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-#include "server.h"
-#include "broadcastagent.h"
-#include "connectionhandler.h"
-#include "util.h"
-#include "network.h"
+#include "server.hpp"
+#include "broadcastagent.hpp"
+#include "connectionhandler.hpp"
+#include "util.hpp"
+#include "network.hpp"
 
-char* serverName;
+std::string serverName;
 unsigned int serverNameLength;
 char* msgQueueName;
 
@@ -19,7 +19,7 @@ int main(int argc, char **argv)
 	infoPrint("Chat server v0.1");
 
 	serverName = SERVER_DEFAULT_NAME;
-	serverNameLength = strlen(serverName);
+	serverNameLength = serverName.length();
 	in_port_t port = SERVER_DEFAULT_PORT;
 
 	//TODO: evaluate command line arguments
@@ -31,7 +31,7 @@ int main(int argc, char **argv)
 		{
 			infoPrint("Usage: %s [-h] [-n SERVERNAME] [-p PORT]", getProgName());
 			infoPrint("\t-h\t\tprint this usage");
-			infoPrint("\t-n SERVERNAME\tset server name (default: %s)", SERVER_DEFAULT_NAME);
+			infoPrint("\t-n SERVERNAME\tset server name (default: %s)", SERVER_DEFAULT_NAME.c_str());
 			infoPrint("\t-p PORT\t\tset TCP port (default: %u)", SERVER_DEFAULT_PORT);
 			return EXIT_SUCCESS;
 
@@ -49,7 +49,7 @@ int main(int argc, char **argv)
 		{
 
 			char* givenPort = argv[++i];
-			int j = 0;
+			unsigned int j = 0;
 			while (j < strlen(givenPort))
 			{
 				if (isdigit(givenPort[j]) != 0)
@@ -66,11 +66,11 @@ int main(int argc, char **argv)
 		}
 	}
 	
-	debugPrint("server name is '%s'", serverName);
+	debugPrint("server name is '%s'", serverName.c_str());
 
-	msgQueueName = malloc(serverNameLength + 2);
+	msgQueueName = reinterpret_cast<char*>(malloc(serverNameLength + 2));
 	msgQueueName[0] = '/';
-	strcpy(&msgQueueName[1], serverName);
+	strcpy(&msgQueueName[1], serverName.c_str());
 	int result = broadcastAgentInit();
 	if (result < 0)
 		return EXIT_FAILURE;

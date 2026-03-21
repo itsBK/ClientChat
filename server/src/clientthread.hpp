@@ -3,9 +3,9 @@
 
 #include <stdlib.h>
 #include <stdbool.h>
-#include "server.h"
-#include "user.h"
-#include "network.h"
+#include "server.hpp"
+#include "user.hpp"
+#include "network.hpp"
 
 /**
  * returns:

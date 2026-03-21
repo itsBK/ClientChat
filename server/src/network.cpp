@@ -1,5 +1,5 @@
 #include <errno.h>
-#include "network.h"
+#include "network.hpp"
 
 
 int receiveLoginRequest(int fd, LoginRequest* buffer)
@@ -56,7 +56,7 @@ int networkReceive(int fd, Message *buffer)
 		return bytesReceived;
 	}
 
-	enum MessageType type = buffer->type;
+	auto type = static_cast<MessageType>(buffer->type);
 	buffer->len = ntohs(buffer->len);
 	switch (type)
 	{

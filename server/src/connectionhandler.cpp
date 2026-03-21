@@ -1,7 +1,7 @@
 #include <errno.h>
-#include "connectionhandler.h"
-#include "user.h"
-#include "util.h"
+#include "connectionhandler.hpp"
+#include "user.hpp"
+#include "util.hpp"
 
 static int createPassiveSocket(in_port_t port)
 {
@@ -32,7 +32,7 @@ int connectionHandler(in_port_t port)
 		//TODO: accept() incoming connection
 		//TODO: add connection to user list and start client thread
 		int socketFd = accept(fd, NULL, NULL);
-		User* newUser = addUser(socketFd);
+		User::add(socketFd);
 	}
 
 	return 0;	//never reached

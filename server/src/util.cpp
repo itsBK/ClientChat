@@ -8,7 +8,7 @@
 #include <errno.h>
 #include <pthread.h>
 #include <sys/types.h>
-#include "util.h"
+#include "util.hpp"
 
 typedef enum
 {

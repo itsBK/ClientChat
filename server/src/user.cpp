@@ -1,18 +1,18 @@
 #include <pthread.h>
 #include <stdlib.h>
 #include <string.h>
-#include "util.h"
-#include "user.h"
-#include "clientthread.h"
+#include "util.hpp"
+#include "user.hpp"
+#include "clientthread.hpp"
 
 static pthread_mutex_t userLock = PTHREAD_MUTEX_INITIALIZER;
 static User *userFront = NULL;          // last added user (aka always at front of list)
 static User *userBack = NULL;           // first added user (First-In-Last-Out)
 
 
-User* addUser(int socketFd) 
+void User::add(int socketFd)
 {
-    User* newUser = malloc(sizeof(User));
+    User* newUser = reinterpret_cast<User*>(malloc(sizeof(User)));
     pthread_t threadId = 0;
     pthread_create(&threadId, NULL, clientthread, newUser);
 
@@ -34,12 +34,10 @@ User* addUser(int socketFd)
         userFront = newUser;
     }
     pthread_mutex_unlock(&userLock);
-
-    return newUser;
 }
 
 
-void removeUser(User* userToRemove)
+void User::remove(User* userToRemove)
 {
     User* current = NULL;
     while ((current = iterator(current)) != NULL)
@@ -87,7 +85,7 @@ void removeUser(User* userToRemove)
 }
 
 
-User* iterator(User* currentUser)
+User* User::iterator(User* currentUser)
 {
     User* result;
     pthread_mutex_lock(&userLock);
@@ -106,7 +104,7 @@ enum LoginResponseCode checkAndProcessName(User* user, char* name)
 {
 	// check if only allowed keys are used
 	// TODO: maybe replace with regex  "([!-~](?!\'|\"|`))*"
-	for (int i = 0; i < strlen(name); i++)
+	for (unsigned int i = 0; i < strlen(name); i++)
 	{
 		char c = name[i];
 		if (!(c >= 33 && c <= 126 && !(c == '\'' || c == '\"' || c == '`')))
@@ -117,7 +115,7 @@ enum LoginResponseCode checkAndProcessName(User* user, char* name)
 
 	// check name availability
 	User* current = NULL;
-	while ((current = iterator(current)) != NULL)
+	while ((current = User::iterator(current)) != NULL)
 	{
 		if (current->name != NULL && strcmp(current->name, name) == 0)
 		{
@@ -126,7 +124,7 @@ enum LoginResponseCode checkAndProcessName(User* user, char* name)
 	}
 
     pthread_mutex_lock(&userLock);
-	user->name = malloc(strlen(name));
+	user->name = reinterpret_cast<char*>(malloc(strlen(name)));
 	strcpy(user->name, name);
     pthread_mutex_unlock(&userLock);
     

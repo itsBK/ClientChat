@@ -2,17 +2,17 @@
 #include <mqueue.h>
 #include <stdbool.h>
 
-#include "broadcastagent.h"
-#include "util.h"
-#include "network.h"
-#include "server.h"
-#include "user.h"
+#include "broadcastagent.hpp"
+#include "util.hpp"
+#include "network.hpp"
+#include "server.hpp"
+#include "user.hpp"
 
 static mqd_t messageQueue;
 static pthread_t threadId;
 static bool threadRunning;
 
-static void *broadcastAgent(void *arg)
+static void *broadcastAgent(void*)
 {
 	unsigned char buf[sizeof(Server2Client)];
 	while(threadRunning)
@@ -24,7 +24,7 @@ static void *broadcastAgent(void *arg)
 		}
 
 		User* user = NULL;
-		while ((user = iterator(user)) != NULL)
+		while ((user = User::iterator(user)) != NULL)
 		{
 			if (isUserLoggedIn(user))
 			{
@@ -38,7 +38,7 @@ static void *broadcastAgent(void *arg)
 	return NULL;
 }
 
-int broadcastAgentInit(void)
+int broadcastAgentInit()
 {
 	struct mq_attr attr;
 	attr.mq_maxmsg = MAXIMUM_QUEUE_SIZE;
@@ -51,7 +51,7 @@ int broadcastAgentInit(void)
 	}
 
 	debugPrint("opening POSIX Message Queue named '%s'", msgQueueName);
-	debugPrint("maximum queued messages count is %d, maximum buffer size per msg is %d bytes", attr.mq_maxmsg, attr.mq_msgsize);
+	debugPrint("maximum queued messages count is %ld, maximum buffer size per msg is %ld bytes", attr.mq_maxmsg, attr.mq_msgsize);
 
 	threadRunning = true;
     int result = pthread_create(&threadId, NULL, broadcastAgent, NULL);
@@ -63,7 +63,7 @@ int broadcastAgentInit(void)
 	return result;
 }
 
-void broadcastAgentCleanup(void)
+void broadcastAgentCleanup()
 {
 	threadRunning = false;
     pthread_join(threadId, NULL);

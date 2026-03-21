@@ -1,10 +1,12 @@
 #ifndef SERVER_H
 #define SERVER_H
 
-#define SERVER_DEFAULT_NAME "reference-server"
+#include <string>
+
+static const std::string SERVER_DEFAULT_NAME = "reference-server";
 #define SERVER_DEFAULT_PORT 8111
 
-extern char* serverName;
+extern std::string serverName;
 extern unsigned int serverNameLength;
 extern char* msgQueueName;
 

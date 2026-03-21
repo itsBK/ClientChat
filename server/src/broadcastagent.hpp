@@ -3,7 +3,7 @@
 
 #define MAXIMUM_QUEUE_SIZE 10
 
-int broadcastAgentInit(void);
-void broadcastAgentCleanup(void);
+int broadcastAgentInit();
+void broadcastAgentCleanup();
 
 #endif
