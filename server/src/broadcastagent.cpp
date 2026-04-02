@@ -17,14 +17,13 @@ static void *broadcastAgent(void*)
 	unsigned char buf[sizeof(Server2Client)];
 	while(threadRunning)
 	{
-		if (mq_receive(messageQueue, (char*) &buf, sizeof(Server2Client), NULL) == -1)
+		if (mq_receive(messageQueue, (char*) &buf, sizeof(Server2Client), nullptr) == -1)
 		{
 			errnoPrint("error accored while dequeuing message");
 			continue;
 		}
 
-		User* user = NULL;
-		while ((user = User::iterator(user)) != NULL)
+		for (auto user : UserIterator::users)
 		{
 			if (isUserLoggedIn(user))
 			{
@@ -35,7 +34,7 @@ static void *broadcastAgent(void*)
 		}
 	}
 	
-	return NULL;
+	return nullptr;
 }
 
 int broadcastAgentInit()
@@ -54,7 +53,7 @@ int broadcastAgentInit()
 	debugPrint("maximum queued messages count is %ld, maximum buffer size per msg is %ld bytes", attr.mq_maxmsg, attr.mq_msgsize);
 
 	threadRunning = true;
-    int result = pthread_create(&threadId, NULL, broadcastAgent, NULL);
+    int result = pthread_create(&threadId, nullptr, broadcastAgent, nullptr);
 	if (result < 0)
 	{
 		errnoPrint("error while creating broadcast thread");
@@ -66,7 +65,7 @@ int broadcastAgentInit()
 void broadcastAgentCleanup()
 {
 	threadRunning = false;
-    pthread_join(threadId, NULL);
+    pthread_join(threadId, nullptr);
 
 	int status = mq_close(messageQueue) | mq_unlink(msgQueueName);
 	if (status < 0)

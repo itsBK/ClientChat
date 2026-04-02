@@ -29,7 +29,7 @@ int receiveLoginRequest(int fd, LoginRequest* buffer)
 
 int receiveClient2Server(int fd, Client2Server* buffer)
 {
-	if (buffer->len > TEXT_MAX)
+	if (buffer->len > TEXT_MAX_LENGTH)
 		return -1;
 	
 	ssize_t bytesReceived = recv(fd, &buffer->text, buffer->len, 0);

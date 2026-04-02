@@ -4,6 +4,25 @@
 #include <pthread.h>
 #include "network.hpp"
 
+class User;
+
+class UserIterator
+{
+	UserIterator();
+	UserIterator(User* user);
+	User* current;
+
+public:
+	static UserIterator users;
+	~UserIterator() = default;
+
+	static UserIterator begin();
+	static UserIterator end();
+	UserIterator& operator++();
+	User* operator*() const;
+	bool operator!=(const UserIterator& other) const;
+};
+
 class User
 {
 public:
@@ -16,24 +35,18 @@ public:
 	static void add(int socketFd);
 	static void remove(User* userToRemove);
 	/**
-	 * returns first user if the passed argument is null
-	 * otherwise returns the next user in the list.
-	 * WARNING: it returns null after iterating through all the list
+	 * NOTE: name must be null terminated!!
+	 * @returns one of the following:<br>
+	 * * SUCCESS<br>
+	 * * NAME_ALREADY_IN_USE<br>
+	 * * NAME_INVALID<br>
+	 * if the return code is SUCCESS the name will be also allocated in User struct
 	*/
-	static User* iterator(User* currentUser);
+	LoginResponseCode CheckAndProcessName(char* name);
 };
 
 
 
-/**
- * NOTE: name must be null terminated!!
- * @returns one of the following:<br>
- * * SUCCESS<br>
- * * NAME_ALREADY_IN_USE<br>
- * * NAME_INVALID<br>
- * if the return code is SUCCESS the name will be also allocated in User struct
-*/
-enum LoginResponseCode checkAndProcessName(User* user, char* name);
 bool isUserLoggedIn(User* user);
 
 #endif

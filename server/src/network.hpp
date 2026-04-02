@@ -24,7 +24,7 @@ enum { NAME_MAX_LENGTH = 31 };
 /**
  * NULL terminator excluded
 */
-enum { TEXT_MAX = 512 };
+enum { TEXT_MAX_LENGTH = 512 };
 
 enum LoginResponseCode
 {
@@ -84,7 +84,7 @@ typedef struct __attribute__((__packed__))
 {
 	uint8_t type;
 	uint16_t len;
-	char text[TEXT_MAX];
+	char text[TEXT_MAX_LENGTH];
 } Client2Server;
 
 typedef struct __attribute__((__packed__))
@@ -93,7 +93,7 @@ typedef struct __attribute__((__packed__))
 	uint16_t len;
 	uint64_t timestamp;
 	char originalSender[NAME_MAX_LENGTH + 1];
-	char text[TEXT_MAX];
+	char text[TEXT_MAX_LENGTH];
 } Server2Client;
 
 
@@ -115,6 +115,8 @@ typedef struct __attribute__((__packed__))
 	char name[NAME_MAX_LENGTH];
 } UserRemoved;
 
+
+enum { MESSAGE_MAX_LENGTH = sizeof(Server2Client) };
 
 /**
  * returns

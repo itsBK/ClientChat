@@ -16,12 +16,12 @@ void *clientthread(void *arg)
 	if (messageQueue < 0)
 	{
 		errnoPrint("error accored while opening POSIX message queue for client thread");
-		return NULL;
+		return nullptr;
 	}
 	debugPrint("Client thread started.");
 
-	//TODO: Receive messages and send them to all users, skip self
-	auto message = reinterpret_cast<Message*>(malloc(1024));
+	// Receive messages and send them to all users, skip self
+	auto message = static_cast<Message*>(malloc(MESSAGE_MAX_LENGTH));
 	int returnVal;
 	while ((returnVal = networkReceive(self->sock, message)) > 0)
 	{
@@ -59,7 +59,7 @@ void *clientthread(void *arg)
 	free(message);
 	User::remove(self);
 	
-	return NULL;
+	return nullptr;
 }
 
 
@@ -83,7 +83,7 @@ int processLoginRequest(User* self, LoginRequest* request)
 	strncpy(name, request->name, nameLength);
 	name[nameLength] = '\0';
 	
-	response.code = checkAndProcessName(self, name);
+	response.code = self->CheckAndProcessName(name);
 	networkSend(self->sock, (Message*) &response);
 
 	if (response.code != SUCCESS)
@@ -101,7 +101,7 @@ void processReceivedMessage(User* sender, Client2Server* receivedMessage)
 	Server2Client server2Client;
 	server2Client.type = SERVER_2_CLIENT;
 	server2Client.len = sizeof(server2Client.timestamp) + sizeof(server2Client.originalSender) + receivedMessage->len;
-	server2Client.timestamp = hton64u(time(NULL));
+	server2Client.timestamp = hton64u(time(nullptr));
 	memset(&server2Client.originalSender, '\0', sizeof(server2Client.originalSender));
 
 	if (receivedMessage->text[0] == '/')
@@ -124,7 +124,7 @@ void processCommand(User* sender, Client2Server* receivedCommand, Server2Client*
 }
 
 
-void sendMessage(User* sender, Client2Server* receivedMsg, Server2Client* responseMsg)
+void sendMessage(const User* sender, const Client2Server* receivedMsg, Server2Client* responseMsg)
 {
 	strcpy(responseMsg->originalSender, sender->name);
 	strncpy(responseMsg->text, receivedMsg->text, receivedMsg->len);
@@ -142,11 +142,11 @@ void sendUserAdded(User* newUser)
 	UserAdded userAdded;
 	userAdded.type = USER_ADDED;
 	userAdded.len = htons(sizeof(userAdded.timestamp) + newUserNameLength);
-	userAdded.timestamp = hton64u(time(NULL));
+	userAdded.timestamp = hton64u(time(nullptr));
 	strncpy(userAdded.name, newUser->name, newUserNameLength);
 
-	User* user = NULL;
-	while ((user = User::iterator(user)) != NULL)
+
+	for (auto user : UserIterator::users)
 	{
 		if (user != newUser)
 		{
@@ -163,18 +163,18 @@ void sendUserAdded(User* newUser)
 }
 
 
-void sendUserRemoved(User* removedUser, enum UserRemovedCode code)
+void sendUserRemoved(User* removedUser, UserRemovedCode code)
 {
 	int nameLength = strlen(removedUser->name);
 	UserRemoved userRemoved;
 	userRemoved.type = USER_REMOVED;
 	userRemoved.len = htons(sizeof(userRemoved.timestamp) + sizeof(userRemoved.code) + nameLength);
-	userRemoved.timestamp = hton64u(time(NULL));
+	userRemoved.timestamp = hton64u(time(nullptr));
 	userRemoved.code = code;
 	strncpy(userRemoved.name, removedUser->name, nameLength);
 
-	User* user = NULL;
-	while ((user = User::iterator(user)) != NULL)
+
+	for (auto user : UserIterator::users)
 	{
 		if (user != removedUser)
 			networkSend(user->sock, (Message*) &userRemoved);

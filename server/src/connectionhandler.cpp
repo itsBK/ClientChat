@@ -31,7 +31,7 @@ int connectionHandler(in_port_t port)
 	{
 		//TODO: accept() incoming connection
 		//TODO: add connection to user list and start client thread
-		int socketFd = accept(fd, NULL, NULL);
+		int socketFd = accept(fd, nullptr, nullptr);
 		User::add(socketFd);
 	}
 

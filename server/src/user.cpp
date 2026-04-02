@@ -1,31 +1,70 @@
 #include <pthread.h>
 #include "util.hpp"
 #include "user.hpp"
-
+#include <vector>
 #include <cstring>
 
 #include "clientthread.hpp"
 
 static pthread_mutex_t userLock = PTHREAD_MUTEX_INITIALIZER;
-static User *userFront = NULL;          // last added user (aka always at front of list)
-static User *userBack = NULL;           // first added user (First-In-Last-Out)
+static User *userFront = nullptr;          // last added user (aka always at front of list)
+static User *userBack = nullptr;           // first added user (First-In-Last-Out)
+
+UserIterator UserIterator::users = {};
+
+UserIterator::UserIterator() : current(nullptr) {}
+
+UserIterator::UserIterator(User* user)
+{
+    pthread_mutex_lock(&userLock);
+    current = user;
+    pthread_mutex_unlock(&userLock);
+}
+
+UserIterator UserIterator::begin()
+{
+    return { userBack };
+}
+
+UserIterator UserIterator::end()
+{
+    return {};
+}
+
+UserIterator& UserIterator::operator++()
+{
+    pthread_mutex_lock(&userLock);
+    current = current->next;
+    pthread_mutex_unlock(&userLock);
+    return *this;
+}
+
+User* UserIterator::operator*() const
+{
+    return current;
+}
+
+bool UserIterator::operator!=(const UserIterator &other) const
+{
+    return current != other.current;
+}
 
 
 void User::add(int socketFd)
 {
     User* newUser = reinterpret_cast<User*>(malloc(sizeof(User)));
     pthread_t threadId = 0;
-    pthread_create(&threadId, NULL, clientthread, newUser);
+    pthread_create(&threadId, nullptr, clientthread, newUser);
 
     newUser->thread = threadId;
     newUser->sock = socketFd;
-    newUser->next = NULL;
-    newUser->name = NULL;
+    newUser->next = nullptr;
+    newUser->name = nullptr;
 
     pthread_mutex_lock(&userLock);
-    if (userBack == NULL)
+    if (userBack == nullptr)
     {
-        newUser->prev = NULL;
+        newUser->prev = nullptr;
         userFront = newUser;
         userBack = newUser;
     } else
@@ -40,8 +79,7 @@ void User::add(int socketFd)
 
 void User::remove(User* userToRemove)
 {
-    User* current = NULL;
-    while ((current = iterator(current)) != NULL)
+    for (auto current : UserIterator::users)
     {
         if (current != userToRemove)
             continue;
@@ -50,19 +88,19 @@ void User::remove(User* userToRemove)
         //only one user is left
         if (userBack == userFront)
         {
-            userBack = userFront = NULL;
+            userBack = userFront = nullptr;
         }
         // first user
         else if (current == userBack)
         {
             userBack = current->next;
-            userBack->prev = NULL;
+            userBack->prev = nullptr;
         }
         // last user
         else if (current == userFront)
         {
             userFront = current->prev;
-            userFront->next = NULL;
+            userFront->next = nullptr;
         }
         // a nobody
         else
@@ -71,8 +109,8 @@ void User::remove(User* userToRemove)
             current->prev->next = current->next;
         }
 
-        pthread_join(userToRemove->thread, NULL);
-        if (userToRemove->name != NULL)
+        pthread_join(userToRemove->thread, nullptr);
+        if (userToRemove->name != nullptr)
             free(userToRemove->name);
         free(userToRemove);
         
@@ -81,23 +119,7 @@ void User::remove(User* userToRemove)
     }
 }
 
-
-User* User::iterator(User* currentUser)
-{
-    User* result;
-    pthread_mutex_lock(&userLock);
-
-    if (currentUser == NULL)
-        result = userBack;
-    else
-        result = currentUser->next;
-
-    pthread_mutex_unlock(&userLock);
-    return result;
-}
-
-
-enum LoginResponseCode checkAndProcessName(User* user, char* name)
+LoginResponseCode User::CheckAndProcessName(char* name)
 {
 	// check if only allowed keys are used
 	// TODO: maybe replace with regex  "([!-~](?!\'|\"|`))*"
@@ -111,18 +133,17 @@ enum LoginResponseCode checkAndProcessName(User* user, char* name)
 	}
 
 	// check name availability
-	User* current = NULL;
-	while ((current = User::iterator(current)) != NULL)
+    for (auto current : UserIterator::users)
 	{
-		if (current->name != NULL && strcmp(current->name, name) == 0)
+		if (current->name != nullptr && strcmp(current->name, name) == 0)
 		{
 			return NAME_ALREADY_IN_USE;
 		}
 	}
 
     pthread_mutex_lock(&userLock);
-	user->name = reinterpret_cast<char*>(malloc(strlen(name)));
-	strcpy(user->name, name);
+	this->name = reinterpret_cast<char*>(malloc(strlen(name)));
+	strcpy(this->name, name);
     pthread_mutex_unlock(&userLock);
     
     return SUCCESS;
@@ -134,7 +155,7 @@ bool isUserLoggedIn(User* user)
     bool result = false;
     pthread_mutex_lock(&userLock);
 
-    if (user->name != NULL)
+    if (user->name != nullptr)
         result = true;
 
     pthread_mutex_unlock(&userLock);
