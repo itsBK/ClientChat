@@ -3,7 +3,6 @@
 #include <ctype.h>
 #include "server.hpp"
 #include "broadcastagent.hpp"
-#include "connectionhandler.hpp"
 #include "util.hpp"
 #include "network.hpp"
 

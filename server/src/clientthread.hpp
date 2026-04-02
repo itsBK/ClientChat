@@ -1,5 +1,4 @@
-#ifndef CLIENTTHREAD_H
-#define CLIENTTHREAD_H
+#pragma once
 
 #include <stdlib.h>
 #include <stdbool.h>
@@ -23,4 +22,3 @@ void sendUserRemoved(User* removedUser, enum UserRemovedCode code);
 
 void *clientthread(void *arg);
 
-#endif

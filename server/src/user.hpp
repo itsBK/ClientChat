@@ -1,7 +1,5 @@
-#ifndef USER_H
-#define USER_H
+#pragma once
 
-#include <pthread.h>
 #include "network.hpp"
 
 class User;
@@ -49,4 +47,3 @@ public:
 
 bool isUserLoggedIn(User* user);
 
-#endif

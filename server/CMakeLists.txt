@@ -20,7 +20,7 @@ find_package(Threads REQUIRED)
 set(SERVER_MODULES
 	src/broadcastagent.cpp
 	src/clientthread.cpp
-	src/connectionhandler.cpp
+	src/server.cpp
 	src/main.cpp
 	src/network.cpp
 	src/user.cpp
