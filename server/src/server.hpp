@@ -6,9 +6,13 @@
 static const std::string SERVER_DEFAULT_NAME = "reference-server";
 #define SERVER_DEFAULT_PORT 8111
 #define MAXIMUM_CONNECTIONS_COUNT 20
+#define MAXIMUM_QUEUE_SIZE 10
+
 
 extern std::string serverName;
 extern unsigned int serverNameLength;
 extern char* msgQueueName;
 
 int connectionHandler(in_port_t port);
+int broadcastAgentInit();
+void broadcastAgentCleanup();

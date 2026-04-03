@@ -1,6 +1,7 @@
 #include <pthread.h>
-#include "util.hpp"
 #include "user.hpp"
+
+#include <cstdlib>
 #include <vector>
 #include <cstring>
 

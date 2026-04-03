@@ -1,8 +1,5 @@
 #pragma once
 
-#include <stdlib.h>
-#include <stdbool.h>
-#include "server.hpp"
 #include "user.hpp"
 #include "network.hpp"
 

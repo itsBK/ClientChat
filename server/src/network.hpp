@@ -1,9 +1,7 @@
 #ifndef CHAT_PROTOCOL_H
 #define CHAT_PROTOCOL_H
 
-#include <stdint.h>
 #include <sys/socket.h>
-#include <netinet/in.h>
 #include "util.hpp"
 
 /* TODO: When implementing the fully-featured network protocol (including

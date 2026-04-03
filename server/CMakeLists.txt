@@ -18,7 +18,6 @@ set(THREADS_PREFER_PTHREAD_FLAG TRUE)
 find_package(Threads REQUIRED)
 
 set(SERVER_MODULES
-	src/broadcastagent.cpp
 	src/clientthread.cpp
 	src/server.cpp
 	src/main.cpp

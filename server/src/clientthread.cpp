@@ -1,9 +1,9 @@
-#include <stdio.h>
-#include <stdbool.h>
-#include <string.h>
-#include <time.h>
+#include <cstring>
+#include <ctime>
 #include <mqueue.h>
 #include "clientthread.hpp"
+
+#include "server.hpp"
 #include "util.hpp"
 
 mqd_t messageQueue;

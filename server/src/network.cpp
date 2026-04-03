@@ -1,4 +1,5 @@
 #include <errno.h>
+#include <netinet/in.h>
 #include "network.hpp"
 
 

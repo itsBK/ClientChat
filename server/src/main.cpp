@@ -1,8 +1,5 @@
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
+#include <cstring>
 #include "server.hpp"
-#include "broadcastagent.hpp"
 #include "util.hpp"
 #include "network.hpp"
 
