@@ -1,26 +1,28 @@
+#include <cstring>
+#include <pthread.h>
+#include <mqueue.h>
+
 #include "server.hpp"
 #include "user.hpp"
 #include "util.hpp"
-
-#include <pthread.h>
-#include <mqueue.h>
 
 #include "network.hpp"
 
 static mqd_t messageQueue;
 static pthread_t threadId;
-static bool threadRunning;
+bool threadRunning;
+int listenSock_fd;
 
 static int createPassiveSocket(in_port_t port)
 {
 	int fd = socket(AF_INET, SOCK_STREAM, 0);
 	setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (void*) 1, sizeof(int));
-	struct sockaddr_in serverSocket;
+	sockaddr_in serverSocket;
 	serverSocket.sin_family = AF_INET;
 	serverSocket.sin_port = htons(port);
 	serverSocket.sin_addr.s_addr = INADDR_ANY;
 
-	bind(fd, (struct sockaddr*) &serverSocket, sizeof(serverSocket));
+	bind(fd, (sockaddr*) &serverSocket, sizeof(serverSocket));
 	listen(fd, MAXIMUM_CONNECTIONS_COUNT);
 
 	return fd;
@@ -28,18 +30,16 @@ static int createPassiveSocket(in_port_t port)
 
 int connectionHandler(in_port_t port)
 {
-	const int fd = createPassiveSocket(port);
-	if(fd == -1)
+	listenSock_fd = createPassiveSocket(port);
+	if(listenSock_fd == -1)
 	{
 		errnoPrint("Unable to create server socket");
 		return -1;
 	}
 
-	for(;;)
+	while (threadRunning)
 	{
-		//TODO: accept() incoming connection
-		//TODO: add connection to user list and start client thread
-		int socketFd = accept(fd, nullptr, nullptr);
+		int socketFd = accept(listenSock_fd, nullptr, nullptr);
 		User::add(socketFd);
 	}
 
@@ -50,13 +50,17 @@ int connectionHandler(in_port_t port)
 static void *broadcastAgent(void*)
 {
 	unsigned char buf[sizeof(Server2Client)];
-	while(threadRunning)
+	while(true)
 	{
-		if (mq_receive(messageQueue, (char*) &buf, sizeof(Server2Client), nullptr) == -1)
+		ssize_t bytesReceived = mq_receive(messageQueue, (char*) &buf, MESSAGE_MAX_LENGTH, nullptr);
+		if (bytesReceived < 0)
 		{
 			errnoPrint("error accored while dequeuing message");
 			continue;
 		}
+
+		if (strcmp(reinterpret_cast<const char*>(&buf), MESSAGE_QUEUE_CLOSE_COMMAND) == 0)
+			break;
 
 		for (auto user : UserIterator::users)
 		{
@@ -74,10 +78,10 @@ static void *broadcastAgent(void*)
 
 int broadcastAgentInit()
 {
-	struct mq_attr attr;
+	mq_attr attr;
 	attr.mq_maxmsg = MAXIMUM_QUEUE_SIZE;
 	attr.mq_msgsize = sizeof(Server2Client);
-	messageQueue = mq_open(msgQueueName, O_RDONLY | O_CREAT, 0664, &attr);
+	messageQueue = mq_open(msgQueueName, O_RDWR | O_CREAT, 0644, &attr);
 	if (messageQueue < 0)
 	{
 		errnoPrint("error accored while creating POSIX message queue");
@@ -100,6 +104,9 @@ int broadcastAgentInit()
 void broadcastAgentCleanup()
 {
 	threadRunning = false;
+	auto value = mq_send(messageQueue, MESSAGE_QUEUE_CLOSE_COMMAND, strlen(MESSAGE_QUEUE_CLOSE_COMMAND) + 1, 0);
+	if (value < 0)
+		errnoPrint("command to close the message queue could not be sent successfully");
 	pthread_join(threadId, nullptr);
 
 	int status = mq_close(messageQueue) | mq_unlink(msgQueueName);

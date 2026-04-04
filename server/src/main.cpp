@@ -1,3 +1,5 @@
+#include <iostream>
+#include <csignal>
 #include <cstring>
 #include "server.hpp"
 #include "util.hpp"
@@ -7,19 +9,40 @@ std::string serverName;
 unsigned int serverNameLength;
 char* msgQueueName;
 
+void captureSignal(int sig)
+{
+	std::cout << std::endl;
+	if (sig == SIGINT)
+		infoPrint("we are being interrupted (Ctrl+C), where is your manners ...");
+	else if (sig == SIGTERM)
+		infoPrint("we are being politely asked to die. committing Seppuku (honorable death) ?_?");
+	else if (sig == SIGTSTP)
+		infoPrint("received a shush (Ctrl+Z), but we cannot be shushed. Dying in disappointment ...");
+	broadcastAgentCleanup();
+	close(listenSock_fd);
+	infoPrint("socket closed successfully");
+	std::cout << "exiting" << std::endl;
+	exit(EXIT_SUCCESS);
+}
+
+void setExitSignal()
+{
+	signal(SIGINT, captureSignal);		// Ctrl + C
+	signal(SIGTERM, captureSignal);		// polite killing signal
+	signal(SIGTSTP, captureSignal);		// Ctrl + Z
+}
+
 int main(int argc, char **argv)
 {
 	utilInit(argv[0]);
 	debugEnable();
 	styleEnable();
 	infoPrint("Chat server v0.1");
+	setExitSignal();
 
 	serverName = SERVER_DEFAULT_NAME;
 	serverNameLength = serverName.length();
 	in_port_t port = SERVER_DEFAULT_PORT;
-
-	//TODO: evaluate command line arguments
-	//TODO: perform initialization
 
 	for (int i = 1; i < argc; i++)
 	{
