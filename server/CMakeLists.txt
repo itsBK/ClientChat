@@ -24,7 +24,7 @@ set(SERVER_MODULES
 	src/network.cpp
 	src/user.cpp
 	src/util.cpp
-	src/cmdHelper.hpp)
+	src/cmdHelper.cpp)
 
 include_directories(src)
 
