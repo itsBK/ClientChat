@@ -40,10 +40,11 @@ int connectionHandler(in_port_t port)
 	while (threadRunning)
 	{
 		int socketFd = accept(listenSock_fd, nullptr, nullptr);
-		User::add(socketFd);
+		if (socketFd != -1)
+			User::add(socketFd);
 	}
 
-	return 0;	//never reached
+	return 0;
 }
 
 
@@ -55,7 +56,7 @@ static void *broadcastAgent(void*)
 		ssize_t bytesReceived = mq_receive(messageQueue, (char*) &buf, MESSAGE_MAX_LENGTH, nullptr);
 		if (bytesReceived < 0)
 		{
-			errnoPrint("error accored while dequeuing message");
+			errnoPrint("error occurred while dequeuing message");
 			continue;
 		}
 
@@ -68,7 +69,7 @@ static void *broadcastAgent(void*)
 			{
 				int status = networkSend(user->sock, (Message*) &buf);
 				if (status <= 0)
-					infoPrint("unknown error occured while sending data, error code: %d", status);
+					infoPrint("unknown error occurred while sending data, error code: %d", status);
 			}
 		}
 	}

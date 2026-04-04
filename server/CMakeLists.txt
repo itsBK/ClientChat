@@ -23,7 +23,8 @@ set(SERVER_MODULES
 	src/main.cpp
 	src/network.cpp
 	src/user.cpp
-	src/util.cpp)
+	src/util.cpp
+	src/cmdHelper.hpp)
 
 include_directories(src)
 

@@ -14,6 +14,7 @@ static const std::string SERVER_DEFAULT_NAME = "reference-server";
 extern std::string serverName;
 extern unsigned int serverNameLength;
 extern char* msgQueueName;
+extern in_port_t port;
 extern bool threadRunning;
 extern int listenSock_fd;
 
