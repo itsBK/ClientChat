@@ -2,22 +2,36 @@
 
 #include <netinet/in.h>
 #include <string>
-
-static const std::string SERVER_DEFAULT_NAME = "reference-server";
-#define SERVER_DEFAULT_PORT 8111
-#define MAXIMUM_CONNECTIONS_COUNT 20
-#define MAXIMUM_QUEUE_SIZE 10
-
-#define MESSAGE_QUEUE_CLOSE_COMMAND "EXIT_QUEUE"
+#include <mqueue.h>
 
 
-extern std::string serverName;
-extern unsigned int serverNameLength;
-extern char* msgQueueName;
-extern in_port_t port;
-extern bool threadRunning;
-extern int listenSock_fd;
+class Server
+{
+    mqd_t messageQueue;
+    pthread_t threadId;
+    bool threadRunning;
 
-int connectionHandler(in_port_t port);
-int broadcastAgentInit();
-void broadcastAgentCleanup();
+    static int createPassiveSocket(in_port_t port);
+    static void* broadcastAgent(void *args);
+
+public:
+    static constexpr auto DEFAULT_NAME = "reference-server";
+    static constexpr unsigned int DEFAULT_PORT = 8111;
+    static constexpr unsigned int MAX_CONNECTION_COUNT = 20;
+
+    static constexpr auto MESSAGE_QUEUE_CLOSE_COMMAND = "EXIT_QUEUE";
+    static constexpr unsigned int MAXIMUM_QUEUE_SIZE = 10;
+
+    static Server instance;
+
+    int listenSock_fd;
+    in_port_t port = DEFAULT_PORT;
+    std::string serverName = DEFAULT_NAME;
+    char* msgQueueName;
+
+    Server() = default;
+
+    int connectionHandler(in_port_t port);
+    int broadcastAgentInit();
+    void broadcastAgentCleanup();
+};

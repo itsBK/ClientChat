@@ -7,17 +7,11 @@
 #include "util.hpp"
 #include "network.hpp"
 
-std::string serverName;
-unsigned int serverNameLength;
-char* msgQueueName;
-in_port_t port;
-
-
 void cleanup()
 {
-	broadcastAgentCleanup();
-	free(msgQueueName);
-	close(listenSock_fd);
+	Server::instance.broadcastAgentCleanup();
+	free(Server::instance.msgQueueName);
+	close(Server::instance.listenSock_fd);
 	infoPrint("socket closed successfully");
 	infoPrint("exiting");
 }
@@ -29,26 +23,22 @@ int main(int argc, char **argv)
 	styleEnable();
 	infoPrint("Chat server v0.1");
 
-	serverName = SERVER_DEFAULT_NAME;
-	serverNameLength = serverName.length();
-	port = SERVER_DEFAULT_PORT;
-
 	cmdHelper::captureExitSignals(cleanup);
 	int result = cmdHelper::parseArgs(argc, argv);
 	if (result == -1)
 		return EXIT_FAILURE;
 	
-	debugPrint("server name is '%s'", serverName.c_str());
+	debugPrint("server name is '%s'", Server::instance.serverName.c_str());
 
-	msgQueueName = static_cast<char*>(malloc(serverNameLength + 2));
-	msgQueueName[0] = '/';
-	strcpy(&msgQueueName[1], serverName.c_str());
-	result = broadcastAgentInit();
+	Server::instance.msgQueueName = static_cast<char*>(malloc(Server::instance.serverName.length() + 2));
+	Server::instance.msgQueueName[0] = '/';
+	strcpy(&Server::instance.msgQueueName[1], Server::instance.serverName.c_str());
+	result = Server::instance.broadcastAgentInit();
 	if (result < 0)
 		return EXIT_FAILURE;
 
-	debugPrint("using port %u", port);
-	result = connectionHandler(port);
+	debugPrint("using port %u", Server::instance.port);
+	result = Server::instance.connectionHandler(Server::instance.port);
 
 	return result != -1 ? EXIT_SUCCESS : EXIT_FAILURE;
 }

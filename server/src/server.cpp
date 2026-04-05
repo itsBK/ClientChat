@@ -1,6 +1,5 @@
 #include <cstring>
 #include <pthread.h>
-#include <mqueue.h>
 
 #include "server.hpp"
 #include "user.hpp"
@@ -8,12 +7,9 @@
 
 #include "network.hpp"
 
-static mqd_t messageQueue;
-static pthread_t threadId;
-bool threadRunning;
-int listenSock_fd;
+Server Server::instance;
 
-static int createPassiveSocket(in_port_t port)
+int Server::createPassiveSocket(in_port_t port)
 {
 	int fd = socket(AF_INET, SOCK_STREAM, 0);
 	setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (void*) 1, sizeof(int));
@@ -23,12 +19,12 @@ static int createPassiveSocket(in_port_t port)
 	serverSocket.sin_addr.s_addr = INADDR_ANY;
 
 	bind(fd, (sockaddr*) &serverSocket, sizeof(serverSocket));
-	listen(fd, MAXIMUM_CONNECTIONS_COUNT);
+	listen(fd, Server::MAX_CONNECTION_COUNT);
 
 	return fd;
 }
 
-int connectionHandler(in_port_t port)
+int Server::connectionHandler(in_port_t port)
 {
 	listenSock_fd = createPassiveSocket(port);
 	if(listenSock_fd == -1)
@@ -48,12 +44,13 @@ int connectionHandler(in_port_t port)
 }
 
 
-static void *broadcastAgent(void*)
+void* Server::broadcastAgent(void * args)
 {
+	mqd_t* messageQueue = (mqd_t*) args;
 	unsigned char buf[sizeof(Server2Client)];
 	while(true)
 	{
-		ssize_t bytesReceived = mq_receive(messageQueue, (char*) &buf, MESSAGE_MAX_LENGTH, nullptr);
+		ssize_t bytesReceived = mq_receive(*messageQueue, (char*) &buf, MESSAGE_MAX_LENGTH, nullptr);
 		if (bytesReceived < 0)
 		{
 			errnoPrint("error occurred while dequeuing message");
@@ -77,7 +74,7 @@ static void *broadcastAgent(void*)
 	return nullptr;
 }
 
-int broadcastAgentInit()
+int Server::broadcastAgentInit()
 {
 	mq_attr attr;
 	attr.mq_maxmsg = MAXIMUM_QUEUE_SIZE;
@@ -93,7 +90,7 @@ int broadcastAgentInit()
 	debugPrint("maximum queued messages count is %ld, maximum buffer size per msg is %ld bytes", attr.mq_maxmsg, attr.mq_msgsize);
 
 	threadRunning = true;
-	int result = pthread_create(&threadId, nullptr, broadcastAgent, nullptr);
+	int result = pthread_create(&threadId, nullptr, broadcastAgent, &messageQueue);
 	if (result < 0)
 	{
 		errnoPrint("error while creating broadcast thread");
@@ -102,7 +99,7 @@ int broadcastAgentInit()
 	return result;
 }
 
-void broadcastAgentCleanup()
+void Server::broadcastAgentCleanup()
 {
 	threadRunning = false;
 	auto value = mq_send(messageQueue, MESSAGE_QUEUE_CLOSE_COMMAND, strlen(MESSAGE_QUEUE_CLOSE_COMMAND) + 1, 0);

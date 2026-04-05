@@ -12,7 +12,7 @@ void *clientthread(void *arg)
 {
 	User *self = (User *)arg;
 	bool isLoggedin = false;
-	messageQueue = mq_open(msgQueueName, O_RDWR);
+	messageQueue = mq_open(Server::instance.msgQueueName, O_RDWR);
 	if (messageQueue < 0)
 	{
 		errnoPrint("error accored while opening POSIX message queue for client thread");
@@ -67,9 +67,9 @@ int processLoginRequest(User* self, LoginRequest* request)
 {
 	LoginResponse response;
 	response.type = LOGIN_RESPONSE;
-	response.len = htons(sizeof(response.magic) + sizeof(response.code) + serverNameLength);
+	response.len = htons(sizeof(response.magic) + sizeof(response.code) + Server::instance.serverName.length());
 	response.magic = htonl(LOGIN_RESPONSE_MAGIC_VALUE);
-	strncpy(response.sName, serverName.c_str(), serverNameLength);
+	strncpy(response.sName, Server::instance.serverName.c_str(), Server::instance.serverName.length());
 
 	if (request->version != LOGIN_REQUEST_PROTOCOL_VERSION)
 	{
@@ -88,7 +88,7 @@ int processLoginRequest(User* self, LoginRequest* request)
 
 	if (response.code != SUCCESS)
 	{
-		debugPrint("invaild name was requested");
+		debugPrint("invalid name was requested");
 		return -1;
 	}
 

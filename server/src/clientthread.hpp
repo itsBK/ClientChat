@@ -15,7 +15,7 @@ void processCommand(User* sender, Client2Server* receivedCommand, Server2Client*
 void sendMessage(const User* sender, const Client2Server* receivedMsg, Server2Client* responseMsg);
 
 void sendUserAdded(User* newUser);
-void sendUserRemoved(User* removedUser, enum UserRemovedCode code);
+void sendUserRemoved(User* removedUser, UserRemovedCode code);
 
 void *clientthread(void *arg);
 

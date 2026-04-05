@@ -19,20 +19,19 @@ int cmdHelper::parseArgs(int argc, char **argv)
         {
             infoPrint("Usage: %s [-h] [-n SERVERNAME] [-p PORT]", getProgName());
             infoPrint("\t-h\t\tprint this usage");
-            infoPrint("\t-n SERVERNAME\tset server name (default: %s)", SERVER_DEFAULT_NAME.c_str());
-            infoPrint("\t-p PORT\t\tset TCP port (default: %u)", SERVER_DEFAULT_PORT);
+            infoPrint("\t-n SERVERNAME\tset server name (default: %s)", Server::DEFAULT_NAME);
+            infoPrint("\t-p PORT\t\tset TCP port (default: %u)", Server::DEFAULT_PORT);
             return 0;
 
         }
         if (strcmp(argv[i], "-n") == 0 && i+1 < argc)
         {
-            serverNameLength = strlen(argv[++i]);
-            if (serverNameLength > NAME_MAX_LENGTH)
+            Server::instance.serverName = argv[++i];
+            if (Server::instance.serverName.length() > NAME_MAX_LENGTH)
             {
                 errorPrint("server name is too long, maximum length allowed is %d", NAME_MAX_LENGTH);
                 return -1;
             }
-            serverName = argv[i];
 
         } else if (strcmp(argv[i], "-p") == 0 && i+1 < argc)
         {
@@ -50,7 +49,7 @@ int cmdHelper::parseArgs(int argc, char **argv)
                 }
             }
 
-            port = atoi(givenPort);
+            Server::instance.port = atoi(givenPort);
         }
     }
 
@@ -70,7 +69,7 @@ void cmdHelper::captureSignal(int sig)
 {
     std::cout << std::endl;
     if (sig == SIGINT)
-        infoPrint("we are being interrupted (Ctrl+C), where is your manners ...");
+        infoPrint("we are being interrupted (Ctrl+C), where are your manners ...");
     else if (sig == SIGTERM)
         infoPrint("we are being politely asked to die. committing Seppuku (honorable death) ?_?");
     else if (sig == SIGTSTP)
