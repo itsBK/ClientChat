@@ -1,4 +1,4 @@
-#include "cmdHelper.hpp"
+#include "application.hpp"
 
 #include <csignal>
 #include <cstdlib>
@@ -9,9 +9,8 @@
 #include "server.hpp"
 #include "util.hpp"
 
-void(*cmdHelper::cleanupCallback)() = nullptr;
 
-int cmdHelper::parseArgs(int argc, char **argv)
+int Application::parseArgs(int argc, char **argv)
 {
     for (int i = 1; i < argc; i++)
     {
@@ -56,16 +55,14 @@ int cmdHelper::parseArgs(int argc, char **argv)
     return 0;
 }
 
-void cmdHelper::captureExitSignals(void(*cleanup)())
+void Application::captureExitSignals()
 {
     signal(SIGINT, captureSignal);		// Ctrl + C
     signal(SIGTERM, captureSignal);		// polite killing signal
     signal(SIGTSTP, captureSignal);		// Ctrl + Z
-
-    cleanupCallback = cleanup;
 }
 
-void cmdHelper::captureSignal(int sig)
+void Application::captureSignal(int sig)
 {
     std::cout << std::endl;
     if (sig == SIGINT)
@@ -75,6 +72,41 @@ void cmdHelper::captureSignal(int sig)
     else if (sig == SIGTSTP)
         infoPrint("received a shush (Ctrl+Z), but we cannot be shushed. Dying in disappointment ...");
 
-    if (cleanupCallback)
-        cleanupCallback();
+    cleanup();
 }
+
+
+
+void Application::cleanup()
+{
+    Server::instance.cleanup();
+    infoPrint("socket closed successfully");
+    infoPrint("exiting");
+}
+
+int main(int argc, char **argv)
+{
+    utilInit(argv[0]);
+    debugEnable();
+    styleEnable();
+    infoPrint("Chat server v0.1");
+
+    Application::captureExitSignals();
+    int result = Application::parseArgs(argc, argv);
+    if (result == -1)
+        return EXIT_FAILURE;
+
+    debugPrint("server name is '%s'", Server::instance.serverName.c_str());
+
+    Server::instance.msgQueueName = static_cast<char*>(malloc(Server::instance.serverName.length() + 2));
+    Server::instance.msgQueueName[0] = '/';
+    strcpy(&Server::instance.msgQueueName[1], Server::instance.serverName.c_str());
+    result = Server::instance.broadcastAgentInit();
+    if (result < 0)
+        return EXIT_FAILURE;
+
+    result = Server::instance.connectionHandler();
+
+    return result != -1 ? EXIT_SUCCESS : EXIT_FAILURE;
+}
+

@@ -20,11 +20,10 @@ find_package(Threads REQUIRED)
 set(SERVER_MODULES
 	src/clientthread.cpp
 	src/server.cpp
-	src/main.cpp
 	src/network.cpp
 	src/user.cpp
 	src/util.cpp
-	src/cmdHelper.cpp)
+	src/application.cpp)
 
 include_directories(src)
 

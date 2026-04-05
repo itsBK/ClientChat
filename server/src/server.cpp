@@ -2,6 +2,9 @@
 #include <pthread.h>
 
 #include "server.hpp"
+
+#include <unistd.h>
+
 #include "user.hpp"
 #include "util.hpp"
 
@@ -18,13 +21,16 @@ int Server::createPassiveSocket(in_port_t port)
 	serverSocket.sin_port = htons(port);
 	serverSocket.sin_addr.s_addr = INADDR_ANY;
 
-	bind(fd, (sockaddr*) &serverSocket, sizeof(serverSocket));
-	listen(fd, Server::MAX_CONNECTION_COUNT);
+	int result = bind(fd, (sockaddr*) &serverSocket, sizeof(serverSocket));
+	if (result < 0)
+		return result;
 
+	debugPrint("using port %u", instance.port);
+	listen(fd, MAX_CONNECTION_COUNT);
 	return fd;
 }
 
-int Server::connectionHandler(in_port_t port)
+int Server::connectionHandler()
 {
 	listenSock_fd = createPassiveSocket(port);
 	if(listenSock_fd == -1)
@@ -37,7 +43,7 @@ int Server::connectionHandler(in_port_t port)
 	{
 		int socketFd = accept(listenSock_fd, nullptr, nullptr);
 		if (socketFd != -1)
-			User::add(socketFd);
+			User::add(socketFd, &serverName);
 	}
 
 	return 0;
@@ -46,7 +52,7 @@ int Server::connectionHandler(in_port_t port)
 
 void* Server::broadcastAgent(void * args)
 {
-	mqd_t* messageQueue = (mqd_t*) args;
+	auto messageQueue = (mqd_t*) args;
 	unsigned char buf[sizeof(Server2Client)];
 	while(true)
 	{
@@ -79,14 +85,14 @@ int Server::broadcastAgentInit()
 	mq_attr attr;
 	attr.mq_maxmsg = MAXIMUM_QUEUE_SIZE;
 	attr.mq_msgsize = sizeof(Server2Client);
-	messageQueue = mq_open(msgQueueName, O_RDWR | O_CREAT, 0644, &attr);
+	messageQueue = mq_open(msgQueueName.c_str(), O_RDWR | O_CREAT, 0644, &attr);
 	if (messageQueue < 0)
 	{
 		errnoPrint("error accored while creating POSIX message queue");
 		return -1;
 	}
 
-	debugPrint("opening POSIX Message Queue named '%s'", msgQueueName);
+	debugPrint("opening POSIX Message Queue named '%s'", msgQueueName.c_str());
 	debugPrint("maximum queued messages count is %ld, maximum buffer size per msg is %ld bytes", attr.mq_maxmsg, attr.mq_msgsize);
 
 	threadRunning = true;
@@ -107,9 +113,17 @@ void Server::broadcastAgentCleanup()
 		errnoPrint("command to close the message queue could not be sent successfully");
 	pthread_join(threadId, nullptr);
 
-	int status = mq_close(messageQueue) | mq_unlink(msgQueueName);
+	int status = mq_close(messageQueue) | mq_unlink(msgQueueName.c_str());
 	if (status < 0)
 		errnoPrint("error while closing messageQueue");
 	else
 		infoPrint("messageQueue closed successfully");
 }
+
+void Server::cleanup()
+{
+	broadcastAgentCleanup();
+	close(listenSock_fd);
+}
+
+

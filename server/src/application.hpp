@@ -1,8 +1,7 @@
 #pragma once
 
-class cmdHelper
+class Application
 {
-    static void (*cleanupCallback)();
     static void captureSignal(int sig);
 public:
     ///
@@ -10,5 +9,6 @@ public:
     /// @param argv
     /// @return 0 on success, -1 on error
     static int parseArgs(int argc, char **argv);
-    static void captureExitSignals(void(*cleanup)());
+    static void captureExitSignals();
+    static void cleanup();
 };

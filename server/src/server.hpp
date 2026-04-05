@@ -11,7 +11,7 @@ class Server
     pthread_t threadId;
     bool threadRunning;
 
-    static int createPassiveSocket(in_port_t port);
+    int createPassiveSocket(in_port_t port);
     static void* broadcastAgent(void *args);
 
 public:
@@ -27,11 +27,12 @@ public:
     int listenSock_fd;
     in_port_t port = DEFAULT_PORT;
     std::string serverName = DEFAULT_NAME;
-    char* msgQueueName;
+    std::string msgQueueName;
 
     Server() = default;
 
-    int connectionHandler(in_port_t port);
+    int connectionHandler();
     int broadcastAgentInit();
     void broadcastAgentCleanup();
+    void cleanup();
 };

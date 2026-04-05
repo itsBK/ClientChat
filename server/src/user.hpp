@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 #include "network.hpp"
 
 class User;
@@ -29,8 +31,9 @@ public:
 	pthread_t thread;	//thread ID of the client thread
 	int sock;			//socket for client
 	char* name;
+	std::string* serverName;
 
-	static void add(int socketFd);
+	static void add(int socketFd, std::string* serverName);
 	static void remove(User* userToRemove);
 	/**
 	 * NOTE: name must be null terminated!!

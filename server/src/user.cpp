@@ -7,6 +7,7 @@
 
 #include "clientthread.hpp"
 
+
 static pthread_mutex_t userLock = PTHREAD_MUTEX_INITIALIZER;
 static User *userFront = nullptr;          // last added user (aka always at front of list)
 static User *userBack = nullptr;           // first added user (First-In-Last-Out)
@@ -51,7 +52,7 @@ bool UserIterator::operator!=(const UserIterator &other) const
 }
 
 
-void User::add(int socketFd)
+void User::add(int socketFd, std::string* serverName)
 {
     User* newUser = reinterpret_cast<User*>(malloc(sizeof(User)));
     pthread_t threadId = 0;
@@ -61,6 +62,7 @@ void User::add(int socketFd)
     newUser->sock = socketFd;
     newUser->next = nullptr;
     newUser->name = nullptr;
+    newUser->serverName = serverName;
 
     pthread_mutex_lock(&userLock);
     if (userBack == nullptr)
